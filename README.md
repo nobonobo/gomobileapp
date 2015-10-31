@@ -51,7 +51,8 @@ for iOS app
 ```sh
 go get -d github.com/nobonobo/nobopiano
 gomobileapp build -icon icon.png -target ios github.com/nobopiano/nobopiano
-ios-deploy install -r nobopiano.apk
+# first time: open xcode(second or later: not open xcode.)
+ios-deploy install -b nobopiano.app
 ```
 
 for Android apk
