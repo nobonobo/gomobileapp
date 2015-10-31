@@ -72,5 +72,4 @@ gomobileapp build -target desktop github.com/nobopiano/nobopiano
 ## TODO
 
 - no dependency icons.
-- support install -target ios
 - support icon for desktop

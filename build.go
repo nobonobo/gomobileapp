@@ -9,7 +9,7 @@ import (
 var cmdBuild = &command{
 	run:   runBuild,
 	Name:  "build",
-	Usage: "[-target android|ios] [-o output] [build flags] [package]",
+	Usage: "[-target android|ios] [-icon icon.png] [-o output] [build flags] [package]",
 	Short: "compile android APK and iOS app",
 	Long: `
 Build compiles and encodes the app named by the import path.
@@ -39,61 +39,6 @@ shared with the build command. For documentation, see 'go help build'.
 
 The -icon flag specifies the png image filename.
 `,
-}
-
-// "Build flags", used by multiple commands.
-var (
-	buildA       bool   // -a
-	buildI       bool   // -i
-	buildN       bool   // -n
-	buildV       bool   // -v
-	buildX       bool   // -x
-	buildO       string // -o
-	buildGcflags string // -gcflags
-	buildLdflags string // -ldflags
-	buildTarget  string // -target
-	buildWork    bool   // -work
-)
-
-func addBuildFlags(cmd *command) {
-	cmd.flag.StringVar(&buildO, "o", "", "")
-	cmd.flag.StringVar(&buildGcflags, "gcflags", "", "")
-	cmd.flag.StringVar(&buildLdflags, "ldflags", "", "")
-	cmd.flag.StringVar(&buildTarget, "target", "desktop", "")
-
-	cmd.flag.BoolVar(&buildA, "a", false, "")
-	cmd.flag.BoolVar(&buildI, "i", false, "")
-	cmd.flag.Var((*stringsFlag)(&build.Default.BuildTags), "tags", "")
-}
-
-func addBuildFlagsNVXWork(cmd *command) {
-	cmd.flag.BoolVar(&buildN, "n", false, "")
-	cmd.flag.BoolVar(&buildV, "v", false, "")
-	cmd.flag.BoolVar(&buildX, "x", false, "")
-	cmd.flag.BoolVar(&buildWork, "work", false, "")
-}
-
-var (
-	customIcon string
-)
-
-func addCustomBuildFlags(cmd *command) {
-	cmd.flag.StringVar(&customIcon, "icon", "", "")
-}
-
-func init() {
-	addBuildFlags(cmdBuild)
-	addBuildFlagsNVXWork(cmdBuild)
-	addCustomBuildFlags(cmdBuild)
-
-	addBuildFlags(cmdInstall)
-	addBuildFlagsNVXWork(cmdInstall)
-	addCustomBuildFlags(cmdInstall)
-
-	addBuildFlagsNVXWork(cmdInit)
-
-	addBuildFlags(cmdBind)
-	addBuildFlagsNVXWork(cmdBind)
 }
 
 func runBuild(cmd *command) (err error) {
