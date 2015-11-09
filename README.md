@@ -2,6 +2,8 @@
 
 cli wrapper with additional features for gomobile.
 
+japanese-document: http://golang.rdy.jp/2015/11/01/gomobileapp/
+
 ## features
 
 - icons generation from one image.
