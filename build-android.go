@@ -1,36 +1,25 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"go/build"
 	"os"
 	"path/filepath"
-	"strings"
-	"text/template"
 )
 
 var (
-	manifest = template.Must(template.New("").Parse(
-		`<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.golang.todo.{{.NAME}}" android:versionCode="1" android:versionName="1.0">
-  <uses-sdk android:minSdkVersion="9" />
-  <application android:label="{{.LABEL}}" android:debuggable="true" android:icon="@drawable/ic_launcher">
-    <activity android:name="org.golang.app.GoNativeActivity" android:label="{{.LABEL}}" android:configChanges="orientation|keyboardHidden">
-      <meta-data android:name="android.app.lib_name" android:value="{{.NAME}}" />
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
-  </application>
-</manifest>
-`,
-	))
+	iconAttr = xml.Attr{
+		Name: xml.Name{
+			Space: "http://schemas.android.com/apk/res/android",
+			Local: "icon",
+		},
+		Value: "@drawable/ic_launcher",
+	}
 )
 
 func buildAndroid(pkg *build.Package, ctx CmdContext) error {
 	name := filepath.Base(pkg.ImportPath)
-	label := strings.ToUpper(name[:1]) + name[1:]
 	output := name + ".apk"
 	if len(buildO) > 0 {
 		output = buildO
@@ -60,14 +49,45 @@ func buildAndroid(pkg *build.Package, ctx CmdContext) error {
 		return err
 	}
 
-	mf, err := os.Create(filepath.Join("build", "android", "apk", "AndroidManifest.xml"))
+	manifest := filepath.Join("build", "android", "apk", "AndroidManifest.xml")
+	fp, err := os.Open(manifest)
 	if err != nil {
 		return err
 	}
-	if err := manifest.Execute(mf, map[string]interface{}{
-		"NAME":  name,
-		"LABEL": label,
-	}); err != nil {
+	defer fp.Close()
+	var v *Tag
+	if err := xml.NewDecoder(fp).Decode(&v); err != nil {
+		return err
+	}
+	attrs := v.Attr
+	v.Attr = []xml.Attr{}
+	for _, a := range attrs {
+		switch a.Name.Local {
+		case "versionCode":
+		case "versionName":
+		default:
+			v.Attr = append(v.Attr, a)
+		}
+	}
+
+	var app *Tag
+	for _, c := range v.Children {
+		if cf, ok := c.(*Tag); ok {
+			cf.Name.Local = "application"
+			app = cf
+			break
+		}
+	}
+	if app == nil {
+		return fmt.Errorf("<application> not found in AndroidManifest.xml")
+	}
+	app.Attr = append(app.Attr, iconAttr)
+	fp.Close()
+	fp, err = os.Create(manifest)
+	if err != nil {
+		return err
+	}
+	if err := xml.NewEncoder(fp).Encode(&v); err != nil {
 		return err
 	}
 
